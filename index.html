@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OWON Booth</title>
+<meta name="description" content="OWON Booth — an online photobooth. Take photos, decorate your strip, save it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;900&family=Archivo+Black&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <nav class="nav nav-left">
+    <button class="navlink" data-go="intro">Booth</button>
+  </nav>
+  <button class="logo" data-go="intro" aria-label="OWON Booth home">OWON<span>BOOTH</span></button>
+  <nav class="nav nav-right">
+    <button class="navlink" data-go="roll">My Roll <span id="rollCount" class="count"></span></button>
+  </nav>
+</header>
+
+<main class="stage">
+  <section class="card">
+    <button class="back" id="backBtn" hidden>&larr; Back</button>
+    <button class="close" id="closeBtn" aria-label="Start over" title="Start over">&times;</button>
+
+    <!-- 1. INTRO -->
+    <div class="screen" id="s-intro">
+      <div class="intro">
+        <div class="intro-mark">OWON<br>BOOTH</div>
+        <p class="muted" id="introLine">1, 2 or 4 frames, 3 seconds each.</p>
+        <button class="btn btn-solid" id="startBtn">Start</button>
+      </div>
+    </div>
+
+    <!-- 2. FORMAT -->
+    <div class="screen" id="s-format" hidden>
+      <h2>Pick your format</h2>
+      <div class="formats" id="formatList"></div>
+      <div class="actions"><button class="btn" id="formatNext" disabled>Continue</button></div>
+    </div>
+
+    <!-- 3. FILTER -->
+    <div class="screen" id="s-filter" hidden>
+      <h2>Choose a filter</h2>
+      <div class="cam-msg" id="camMsg" hidden>
+        <p id="camMsgText">We couldn't open your camera.</p>
+        <label class="btn">Upload photos instead
+          <input type="file" id="uploadInput" accept="image/*" multiple hidden>
+        </label>
+        <button class="btn" id="retryCam">Try camera again</button>
+      </div>
+      <div class="filters" id="filterList"></div>
+      <div class="actions center"><button class="btn btn-solid" id="filterNext">Continue</button></div>
+    </div>
+
+    <!-- 4. CAPTURE -->
+    <div class="screen" id="s-capture" hidden>
+      <div class="capture">
+        <div class="capture-main">
+          <div class="viewfinder">
+            <canvas id="liveCanvas" width="640" height="480"></canvas>
+            <button class="shutter" id="shutterBtn">Click<br>to<br>start</button>
+            <div class="countdown" id="countdown" hidden></div>
+            <div class="flash" id="flash"></div>
+          </div>
+          <p class="left-count" id="leftCount">4 pictures left</p>
+        </div>
+        <div class="capture-side">
+          <div class="round-thumbs" id="roundThumbs"></div>
+          <button class="btn" id="captureNext" hidden>Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. HAPPY? -->
+    <div class="screen" id="s-happy" hidden>
+      <div class="split">
+        <div class="preview-wrap"><canvas id="happyCanvas" class="preview"></canvas></div>
+        <div class="side">
+          <h2 class="left">Happy with your pictures?</h2>
+          <button class="btn wide" id="decorateBtn">Let's decorate</button>
+          <button class="btn wide" id="moreBtn">Take more</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. FAVOURITES -->
+    <div class="screen" id="s-favs" hidden>
+      <h2>Select your favourites</h2>
+      <div class="split">
+        <div class="preview-wrap">
+          <canvas id="favCanvas" class="preview"></canvas>
+          <p class="fav-count" id="favCount">0/4</p>
+        </div>
+        <div class="side">
+          <p class="muted small">Tap photos in the order you want them. Tap again to remove.</p>
+          <div class="pool" id="pool"></div>
+          <div class="row">
+            <button class="btn" id="favMore">Take more</button>
+            <button class="btn btn-solid" id="favNext" disabled>Continue</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. STUDIO (frame, stickers, doodle, message, finish) -->
+    <div class="screen" id="s-studio" hidden>
+      <div class="split studio">
+        <div class="preview-wrap">
+          <canvas id="studioCanvas" class="preview interactive"></canvas>
+        </div>
+        <div class="side panel-side">
+
+          <!-- frame step -->
+          <div class="panel" data-step="frame">
+            <div class="tabs" id="frameTabs"></div>
+            <div class="tabbody" id="frameBody"></div>
+          </div>
+
+          <!-- decorate step -->
+          <div class="panel" data-step="decorate" hidden>
+            <div class="tabs" id="decoTabs">
+              <button class="tab active" data-tab="stickers">Stickers</button>
+              <button class="tab" data-tab="doodle">Doodle</button>
+            </div>
+            <div class="tabbody" id="stickerBody">
+              <div class="subtabs" id="stickerPackTabs"></div>
+              <div class="sticker-grid" id="stickerGrid"></div>
+              <p class="muted small">Tap a sticker to add it. Drag to move, use the corner handle to resize and rotate, &times; to remove.</p>
+            </div>
+            <div class="tabbody" id="doodleBody" hidden>
+              <p class="label">Pen</p>
+              <div class="swatches" id="penColours"></div>
+              <p class="label">Size</p>
+              <div class="sizes" id="penSizes"></div>
+              <p class="label">Brush</p>
+              <div class="brushes" id="penBrushes"></div>
+              <div class="row">
+                <button class="btn" id="undoBtn">Undo</button>
+                <button class="btn" id="clearBtn">Clear doodles</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- message step -->
+          <div class="panel" data-step="message" hidden>
+            <h3>What are you thinking about?</h3>
+            <input type="text" class="text-in" id="messageIn" placeholder="Type a message…">
+            <label class="check"><input type="checkbox" id="dateToggle"> Show date + time stamp</label>
+          </div>
+
+          <!-- finish step -->
+          <div class="panel" data-step="finish" hidden>
+            <h3>All done!</h3>
+            <button class="btn btn-solid wide" id="downloadBtn">Download image</button>
+            <button class="btn wide" id="shareBtn" hidden>Save to Photos / Share</button>
+            <button class="btn wide" id="saveRollBtn">Save to my roll</button>
+            <p class="muted small">Your roll is stored in this browser only. Clearing your browser data will remove it.</p>
+            <button class="btn wide" id="againBtn">Take new photos</button>
+          </div>
+
+          <div class="actions"><button class="btn" id="studioNext">Continue</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROLL -->
+    <div class="screen" id="s-roll" hidden>
+      <h2>My Roll</h2>
+      <p class="muted center-text small">Saved in this browser only.</p>
+      <div class="roll" id="rollGrid"></div>
+      <p class="muted center-text" id="rollEmpty" hidden>Nothing here yet. Your saved strips will appear here.</p>
+    </div>
+  </section>
+</main>
+
+<!-- roll viewer -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-card">
+    <button class="close" id="modalClose" aria-label="Close">&times;</button>
+    <img id="modalImg" alt="Saved photo strip">
+    <p class="muted small" id="modalDate"></p>
+    <div class="row">
+      <button class="btn btn-solid" id="modalDownload">Download</button>
+      <button class="btn" id="modalShare" hidden>Share</button>
+      <button class="btn" id="modalDelete">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+<video id="video" playsinline muted autoplay hidden></video>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
