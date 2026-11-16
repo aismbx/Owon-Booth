@@ -16,18 +16,28 @@ To test on your own computer, run `python3 -m http.server` in this folder and op
 (opening index.html by double-clicking won't allow the camera).
 
 ## Adding your own artwork (only edit config.js)
-| What | Size | Where | Add it in config.js under |
+Every file sits in ONE folder (no subfolders), so you can select them all and upload in one go, even from an iPad.
+Name files with a prefix so they stay organised:
+
+| What | Size | Example file name | Add it in config.js under |
 |---|---|---|---|
-| Theme frame, Strip | 1200 x 3600 PNG | assets/frames/THEME/strip4.png | `themePacks` |
-| Theme frame, Grid | 2250 x 2000 PNG | assets/frames/THEME/grid4.png | `themePacks` |
-| Theme frame, Duo | 1800 x 2900 PNG | assets/frames/THEME/duo2.png | `themePacks` |
-| Theme frame, Single | 2200 x 1950 PNG | assets/frames/THEME/single1.png | `themePacks` |
-| Sticker | 600 x 600 PNG | assets/stickers/PACK/name.png | `stickerPacks` |
-| Stamp brush | 128 x 128 white PNG | assets/brushes/name.png | `pens.brushes` |
+| Theme frame, Strip | 1200 x 3600 PNG | frame-THEME-strip4.png | `themePacks` |
+| Theme frame, Grid | 2250 x 2000 PNG | frame-THEME-grid4.png | `themePacks` |
+| Theme frame, Duo | 1800 x 2900 PNG | frame-THEME-duo2.png | `themePacks` |
+| Theme frame, Single | 2200 x 1950 PNG | frame-THEME-single1.png | `themePacks` |
+| Sticker | 600 x 600 PNG | sticker-NAME.png | `stickerPacks` |
+| Doodle pen (stamp brush) | 128 x 128 PNG | brush-NAME.png | `pens.brushes` |
 
 Theme frames are overlays: photos show through the transparent parts. Photo boxes and
 the message area are marked on the design templates. Export PNG-24, sRGB, transparent.
 
-Frame colours, pen colours/sizes, filters, countdown length and the message font
-are all in config.js too. The placeholder artwork in assets/ is just there to show
+Doodle pen PNGs: draw the shape in solid white and set `tint: true` to let it take the
+chosen pen colour, or keep your own colours and set `tint: false`. `spacing`, `scale`
+and `jitter` control how the stamps are laid down as you drag.
+
+GitHub Pages file names are case-sensitive: `Sticker-Heart.png` and `sticker-heart.png`
+are different files, so match config.js exactly.
+
+Frame colours, pen colours/sizes, filters, the frame shadow, countdown length and the
+message font are all in config.js too. The placeholder artwork is just there to show
 how it works; replace or delete it.

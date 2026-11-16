@@ -42,20 +42,20 @@ window.OWON_CONFIG = {
       name: "Valentines",
       themes: [
         { id: "valentines", name: "Love Hearts", frames: {
-            strip4: "assets/frames/valentines/strip4.png",
-            grid4: "assets/frames/valentines/grid4.png",
-            single1: "assets/frames/valentines/single1.png",
-            duo2: "assets/frames/valentines/duo2.png" } }
+            strip4: "frame-valentines-strip4.png",
+            grid4: "frame-valentines-grid4.png",
+            single1: "frame-valentines-single1.png",
+            duo2: "frame-valentines-duo2.png" } }
       ]
     },
     {
       name: "Party",
       themes: [
         { id: "confetti", name: "Confetti", frames: {
-            strip4: "assets/frames/confetti/strip4.png",
-            grid4: "assets/frames/confetti/grid4.png",
-            single1: "assets/frames/confetti/single1.png",
-            duo2: "assets/frames/confetti/duo2.png" } }
+            strip4: "frame-confetti-strip4.png",
+            grid4: "frame-confetti-grid4.png",
+            single1: "frame-confetti-single1.png",
+            duo2: "frame-confetti-duo2.png" } }
       ]
     }
   ],
@@ -66,12 +66,12 @@ window.OWON_CONFIG = {
     {
       name: "Main",
       stickers: [
-        "assets/stickers/main/heart.png",
-        "assets/stickers/main/star.png",
-        "assets/stickers/main/sparkle.png",
-        "assets/stickers/main/flower.png",
-        "assets/stickers/main/hi.png",
-        "assets/stickers/main/smiley.png"
+        "sticker-heart.png",
+        "sticker-star.png",
+        "sticker-sparkle.png",
+        "sticker-flower.png",
+        "sticker-hi.png",
+        "sticker-smiley.png"
       ]
     }
   ],
@@ -79,15 +79,26 @@ window.OWON_CONFIG = {
 
   /* ---- DOODLE PENS -------------------------------------------------------
      sizes are in pixels on a 1200px-wide strip (scaled for other formats).
-     brushes: optional 128x128 white-on-transparent PNG stamps.             */
+
+     brushes = your own PNG pens. The PNG is stamped repeatedly as you drag.
+       src      128x128 transparent PNG
+       tint     true  = draw the PNG in SOLID WHITE and it takes the chosen pen colour
+                false = keeps your PNG's own colours (rainbow pens, glitter, etc.)
+       spacing  gap between stamps (1 = touching, 0.5 = overlapping into a smooth line)
+       scale    how big the stamp is compared with the normal pen (1 = default)
+       jitter   0–1 random rotation per stamp (nice for glitter/flowers)        */
   pens: {
     colours: ["#111111", "#ffffff", "#e8365d", "#ff8fab", "#ffc93c", "#3ec1d3", "#6a4c93", "#5aa469"],
     sizes: [6, 14, 28],
     brushes: [
-      { name: "Hearts", src: "assets/brushes/heart.png", spacing: 1.4 },
-      { name: "Stars",  src: "assets/brushes/star.png",  spacing: 1.4 }
+      { name: "Hearts", src: "brush-heart.png", tint: true, spacing: 1.4, scale: 1, jitter: 0 },
+      { name: "Stars",  src: "brush-star.png",  tint: true, spacing: 1.4, scale: 1, jitter: 0.4 }
     ]
   },
+
+  /* ---- SHADOW -------------------------------------------------------------
+     Soft shadow the frame casts onto the photos, so they look set in.     */
+  frameShadow: { opacity: 0.35, blur: 22, offsetY: 6 },
 
   /* ---- FILTERS -----------------------------------------------------------
      brightness / contrast / saturation: 1 = unchanged

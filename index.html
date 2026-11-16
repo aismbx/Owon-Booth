@@ -76,33 +76,19 @@
       </div>
     </div>
 
-    <!-- 5. HAPPY? -->
-    <div class="screen" id="s-happy" hidden>
-      <div class="split">
-        <div class="preview-wrap"><canvas id="happyCanvas" class="preview"></canvas></div>
-        <div class="side">
-          <h2 class="left">Happy with your pictures?</h2>
-          <button class="btn wide" id="decorateBtn">Let's decorate</button>
-          <button class="btn wide" id="moreBtn">Take more</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 6. FAVOURITES -->
+    <!-- 5. HAPPY? + choose favourites (all photos from every round) -->
     <div class="screen" id="s-favs" hidden>
-      <h2>Select your favourites</h2>
       <div class="split">
         <div class="preview-wrap">
           <canvas id="favCanvas" class="preview"></canvas>
-          <p class="fav-count" id="favCount">0/4</p>
         </div>
         <div class="side">
-          <p class="muted small">Tap photos in the order you want them. Tap again to remove.</p>
+          <h2 class="left">Happy with your pictures?</h2>
+          <p class="muted small">Tap photos in the order you want them in your frame. Tap again to remove. Every photo you've taken stays here.</p>
+          <div class="pool-head"><span class="label">Your photos</span><span class="fav-count" id="favCount">0/4</span></div>
           <div class="pool" id="pool"></div>
-          <div class="row">
-            <button class="btn" id="favMore">Take more</button>
-            <button class="btn btn-solid" id="favNext" disabled>Continue</button>
-          </div>
+          <button class="btn btn-solid wide" id="favNext" disabled>Let's decorate</button>
+          <button class="btn wide" id="favMore">Take more</button>
         </div>
       </div>
     </div>
@@ -148,7 +134,7 @@
 
           <!-- message step -->
           <div class="panel" data-step="message" hidden>
-            <h3>What are you thinking about?</h3>
+            <h3>Add a message</h3>
             <input type="text" class="text-in" id="messageIn" placeholder="Type a message…">
             <label class="check"><input type="checkbox" id="dateToggle"> Show date + time stamp</label>
           </div>
