@@ -115,6 +115,12 @@ window.OWON_CONFIG = {
     { name: "Film",    brightness: 1,    contrast: 1.1,  saturation: 0.8,  warmth: 12, fade: 0.3, grain: 0.12, vignette: 0.35 }
   ],
 
+  /* ---- BRAND MARK ---------------------------------------------------------
+     Small wordmark printed bottom-right of every frame (like a real booth).
+     size = letter height in px on a 1200px-wide strip (scaled for others).
+     colour "auto" = black on light frames, white on dark frames.          */
+  brandMark: { show: true, text: "OWON", font: "Archivo Black", size: 32, colour: "auto" },
+
   /* ---- MESSAGE ------------------------------------------------------------ */
   message: {
     font: "Archivo",          // any Google Font loaded in index.html

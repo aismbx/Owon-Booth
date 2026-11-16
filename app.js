@@ -302,7 +302,7 @@
   function updateCaptureUI() {
     const n = fmt().shots, left = n - S.round.length;
     $("#leftCount").textContent = `${left} picture${left === 1 ? "" : "s"} left`;
-    const box = $("#roundThumbs"); box.innerHTML = "";
+    const box = $("#roundThumbs"); if (!box) return; box.innerHTML = "";
     box.style.gridTemplateColumns = n === 1 ? "1fr" : "1fr 1fr";
     for (let i = 0; i < n; i++) {
       const p = S.round[i];
@@ -381,7 +381,10 @@
     if (!doodle || doodle.width !== f.width || doodle.height !== f.height || !S.strokes.length) {
       doodle = el("canvas", { width: f.width, height: f.height }); dctx = doodle.getContext("2d");
     }
-    try { await document.fonts.load(`${C.message.weight} 64px "${C.message.font}"`); } catch (e) {}
+    try {
+      await document.fonts.load(`${C.message.weight} 64px "${C.message.font}"`);
+      if (C.brandMark?.show) await document.fonts.load(`400 64px "${C.brandMark.font}"`);
+    } catch (e) {}
     buildFramePanel(); buildDecoPanel();
     await rebuildBase();
     setStep(S.step);
@@ -396,15 +399,38 @@
     S.textColour = 0.299 * px[0] + 0.587 * px[1] + 0.114 * px[2] > 150 ? "#111111" : "#ffffff";
     draw();
   }
+  // brand mark bottom-right, lined up with the right edge of the photos; returns the width it takes up
+  function drawBrand(ctx) {
+    const B = C.brandMark, f = fmt();
+    if (!B?.show || !B.text) return 0;
+    const k = Math.min(f.width / 1200, 1.6), FH = C.footerHeight;
+    const right = Math.max(...slotRects(f).map((r) => r.x + r.w));
+    ctx.save();
+    let loaded = false;
+    try { document.fonts.forEach((ff) => { if (ff.family.replace(/["']/g, "") === B.font && ff.status === "loaded") loaded = true; }); } catch (e) {}
+    const px = B.size * k * 1.38; // font size so the capitals are about `size` px tall
+    ctx.font = loaded ? `400 ${px}px "${B.font}", sans-serif`
+                      : `900 ${px}px "Arial Black", "Helvetica Neue", Arial, sans-serif`; // bold backup if the font didn't load
+    ctx.fillStyle = B.colour && B.colour !== "auto" ? B.colour : S.textColour;
+    ctx.textAlign = "right"; ctx.textBaseline = "alphabetic";
+    const capH = B.size * k;
+    ctx.fillText(B.text, right, f.height - FH / 2 + capH / 2);
+    const w = ctx.measureText(B.text).width;
+    ctx.restore();
+    return w;
+  }
   function drawText(ctx) {
     const f = fmt(), FH = C.footerHeight, top = f.height - FH, cx = f.width / 2;
+    const brandW = drawBrand(ctx);
     const msg = S.message.trim(), date = S.showDate ? fmtDate(S.date) : "";
     if (!msg && !date) return;
     const k = Math.min(f.width / 1200, 1.6);
+    // keep the message centred but clear of the brand mark
+    const maxW = brandW ? f.width - 2 * (100 + brandW + 40 * k) : f.width - 200;
     ctx.save(); ctx.fillStyle = S.textColour; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const fit = (txt, size, weight) => {
       let s = size; ctx.font = `${weight} ${s}px "${C.message.font}", sans-serif`;
-      while (ctx.measureText(txt).width > f.width - 200 && s > 20) { s -= 2; ctx.font = `${weight} ${s}px "${C.message.font}", sans-serif`; }
+      while (ctx.measureText(txt).width > maxW && s > 16) { s -= 2; ctx.font = `${weight} ${s}px "${C.message.font}", sans-serif`; }
     };
     if (msg) { fit(msg, 44 * k, C.message.weight); ctx.fillText(msg, cx, top + FH * (date ? 0.42 : 0.5)); }
     if (date) { fit(date, 24 * k, 500); ctx.globalAlpha = 0.85; ctx.fillText(date, cx, top + FH * (msg ? 0.66 : 0.5)); }
