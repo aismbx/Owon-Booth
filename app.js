@@ -161,28 +161,48 @@
 
   /* ---------------- layout rendering ---------------- */
   const slotRects = (f) => f.slots.map(([x, y]) => ({ x, y, w: f.photo[0], h: f.photo[1] }));
-  function drawLayout(ctx, f, photos, colour, themeImg) {
-    ctx.fillStyle = colour; ctx.fillRect(0, 0, f.width, f.height);
+  const frameLayers = {};
+  function frameLayer(f, colour) {
+    const key = f.id + colour;
+    if (!frameLayers[key]) {
+      const c = el("canvas", { width: f.width, height: f.height }), x = c.getContext("2d");
+      x.fillStyle = colour; x.fillRect(0, 0, f.width, f.height);
+      x.globalCompositeOperation = "destination-out";
+      slotRects(f).forEach((r) => x.fillRect(r.x, r.y, r.w, r.h));
+      frameLayers[key] = c;
+    }
+    return frameLayers[key];
+  }
+  // px = screen pixels per layout unit (canvas shadows ignore transforms, so we scale them by hand)
+  function drawLayout(ctx, f, photos, colour, themeImg, px = 1) {
+    ctx.clearRect(0, 0, f.width, f.height);
     slotRects(f).forEach((r, i) => {
       const p = photos[i];
       if (p) drawCover(ctx, p.canvas, r.x, r.y, r.w, r.h, false);
       else { ctx.fillStyle = "#e9e2d2"; ctx.fillRect(r.x, r.y, r.w, r.h); }
     });
+    const sh = C.frameShadow || { opacity: 0, blur: 0, offsetY: 0 }, u = Math.min(f.width, f.height) / 1200 * px;
+    ctx.save();
+    if (sh.opacity > 0) {
+      ctx.shadowColor = `rgba(0,0,0,${sh.opacity})`; ctx.shadowBlur = sh.blur * u; ctx.shadowOffsetY = sh.offsetY * u;
+    }
+    ctx.drawImage(frameLayer(f, colour), 0, 0);
     if (themeImg) ctx.drawImage(themeImg, 0, 0, f.width, f.height);
+    ctx.restore();
   }
-  function renderSmall(canvas, photos, colour = "#ffffff", scale = 0.35) {
+  function renderSmall(canvas, photos, colour = "#ffffff", scale = 0.4) {
     const f = fmt();
     canvas.width = Math.round(f.width * scale); canvas.height = Math.round(f.height * scale);
     const ctx = canvas.getContext("2d");
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
-    drawLayout(ctx, f, photos, colour, null);
+    drawLayout(ctx, f, photos, colour, null, scale);
   }
 
   /* ---------------- navigation ---------------- */
   const BACK = {
     format: () => go("intro"), filter: () => go("format"),
-    capture: () => go("filter"), happy: () => go("capture"),
-    favs: () => go(S.camera === "ok" ? "happy" : "filter"),
+    capture: () => go("filter"),
+    favs: () => go(S.camera === "ok" ? "capture" : "filter"),
     studio: () => {
       const order = ["frame", "decorate", "message", "finish"];
       const i = order.indexOf(S.step);
@@ -196,9 +216,9 @@
     S.screen = name;
     $$(".screen").forEach((s) => (s.hidden = s.id !== "s-" + name));
     $("#backBtn").hidden = name === "intro";
-    if (["intro", "studio", "roll", "favs", "happy"].includes(name)) stopCamera();
+    if (["intro", "studio", "roll"].includes(name)) stopCamera();
     ({
-      format: buildFormats, filter: enterFilter, capture: enterCapture, happy: enterHappy,
+      format: buildFormats, filter: enterFilter, capture: enterCapture,
       favs: enterFavs, studio: enterStudio, roll: renderRoll,
     }[name] || (() => {}))();
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -224,7 +244,7 @@
   function buildFormats() {
     const list = $("#formatList"); list.innerHTML = "";
     C.formats.forEach((f) => {
-      const sc = Math.min(170 / f.height, 200 / f.width);
+      const sc = 720 / f.height; // drawn sharp, CSS sets the display size
       const c = el("canvas", { width: Math.round(f.width * sc), height: Math.round(f.height * sc) });
       const ctx = c.getContext("2d"); ctx.scale(sc, sc);
       ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, f.width, f.height);
@@ -264,7 +284,7 @@
     if (S.uploads.length) {
       const before = S.pool.length;
       S.uploads.forEach((img) => S.pool.push(makePhoto(img, false)));
-      S.round = S.pool.slice(before, before + fmt().shots);
+      S.round = S.pool.slice(before, before + fmt().shots); S.freshRound = true;
       S.uploads = []; S.previewSrc = null;
       return go("favs");
     }
@@ -311,22 +331,20 @@
       S.round.push(p); S.pool.push(p); updateCaptureUI();
       if (i < n - 1) await sleep(C.pauseBetweenShots);
     }
-    S.date = new Date();
+    S.date = new Date(); S.freshRound = true;
     await sleep(700);
     S.shooting = false; $("#backBtn").disabled = false;
-    if (S.screen === "capture") go("happy");
+    if (S.screen === "capture") go("favs");
   };
-
-  /* ---------------- happy? ---------------- */
-  function enterHappy() { renderSmall($("#happyCanvas"), S.round); }
-  $("#decorateBtn").onclick = () => go("favs");
-  $("#moreBtn").onclick = () => go("capture");
 
   /* ---------------- favourites ---------------- */
   function enterFavs() {
     const n = fmt().shots;
+    // newest round is pre-selected, but every photo from every round is on the side to choose from
+    if (S.freshRound && S.round.length) S.picked = S.round.slice(0, n);
+    S.freshRound = false;
     S.picked = S.picked.filter((p) => S.pool.includes(p)).slice(0, n);
-    if (!S.picked.length) S.picked = (S.round.length ? S.round : S.pool).slice(0, n);
+    if (!S.picked.length) S.picked = S.pool.slice(-n);
     renderFavs();
   }
   function renderFavs() {
@@ -387,8 +405,8 @@
       let s = size; ctx.font = `${weight} ${s}px "${C.message.font}", sans-serif`;
       while (ctx.measureText(txt).width > f.width - 200 && s > 20) { s -= 2; ctx.font = `${weight} ${s}px "${C.message.font}", sans-serif`; }
     };
-    if (msg) { fit(msg, 70 * k, C.message.weight); ctx.fillText(msg, cx, top + FH * (date ? 0.4 : 0.5)); }
-    if (date) { fit(date, 34 * k, 500); ctx.globalAlpha = 0.85; ctx.fillText(date, cx, top + FH * (msg ? 0.72 : 0.5)); }
+    if (msg) { fit(msg, 44 * k, C.message.weight); ctx.fillText(msg, cx, top + FH * (date ? 0.42 : 0.5)); }
+    if (date) { fit(date, 24 * k, 500); ctx.globalAlpha = 0.85; ctx.fillText(date, cx, top + FH * (msg ? 0.66 : 0.5)); }
     ctx.restore();
   }
   function handleSize() { const r = studio.getBoundingClientRect(); return r.width ? 13 * studio.width / r.width : 30; }
@@ -494,10 +512,10 @@
       onclick: (e) => { S.pen.size = sz; $$("#penSizes .size").forEach((x) => x.classList.remove("selected")); e.currentTarget.classList.add("selected"); } },
       el("i", { style: `width:${6 + i * 6}px;height:${6 + i * 6}px` }))));
     const pb = $("#penBrushes"); pb.innerHTML = "";
-    const brushes = [{ id: "pen", name: "Pen" }, ...C.pens.brushes.map((b) => ({ id: b.src, name: b.name, src: b.src })), { id: "eraser", name: "Eraser" }];
+    const brushes = [{ id: "pen", name: "Pen" }, ...C.pens.brushes.map((b) => ({ id: b.src, name: b.name, src: b.src, tint: b.tint })), { id: "eraser", name: "Eraser" }];
     brushes.forEach((b) => pb.append(el("button", { class: "brush" + (S.pen.brush === b.id ? " selected" : ""), title: b.name,
       onclick: (e) => { S.pen.brush = b.id; $$("#penBrushes .brush").forEach((x) => x.classList.remove("selected")); e.currentTarget.classList.add("selected"); } },
-      b.src ? [el("img", { src: b.src, alt: "" }), b.name] : b.name)));
+      b.src ? [el("img", { src: b.src, alt: "", class: b.tint === false ? "" : "tintable" }), b.name] : b.name)));
   }
   async function addSticker(src) {
     try {
@@ -525,13 +543,20 @@
     const ctx = dctx;
     if (st.kind === "stamp") {
       if (!st.stampImg) return;
-      const size = Math.max(40 * unit(), st.size * 4.5), gap = size * (st.spacing || 1.4);
+      const size = Math.max(40 * unit(), st.size * 4.5) * (st.scale || 1), gap = Math.max(2, size * (st.spacing || 1.4));
+      st.seed = st.seed || 1;
+      const stamp = (x, y) => {
+        if (!st.jitter) return ctx.drawImage(st.stampImg, x - size / 2, y - size / 2, size, size);
+        st.seed = (st.seed * 9301 + 49297) % 233280; // repeatable randomness so undo replays the same
+        ctx.save(); ctx.translate(x, y); ctx.rotate((st.seed / 233280 - 0.5) * Math.PI * 2 * st.jitter);
+        ctx.drawImage(st.stampImg, -size / 2, -size / 2, size, size); ctx.restore();
+      };
       const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
       let t = st.carry ?? gap;
-      if (len === 0 && t >= gap) { ctx.drawImage(st.stampImg, b.x - size / 2, b.y - size / 2, size, size); st.carry = 0; return; }
+      if (len === 0 && t >= gap) { stamp(b.x, b.y); st.carry = 0; return; }
       while (t <= len) {
         const px = a.x + dx * t / len, py = a.y + dy * t / len;
-        ctx.drawImage(st.stampImg, px - size / 2, py - size / 2, size, size);
+        stamp(px, py);
         t += gap;
       }
       st.carry = t - len;
@@ -547,7 +572,7 @@
   }
   function replayStrokes() {
     dctx.clearRect(0, 0, doodle.width, doodle.height);
-    S.strokes.forEach((st) => { st.carry = undefined; st.pts.forEach((p, i) => strokeSegment(st, i ? st.pts[i - 1] : p, p)); });
+    S.strokes.forEach((st) => { st.carry = undefined; st.seed = 1; st.pts.forEach((p, i) => strokeSegment(st, i ? st.pts[i - 1] : p, p)); });
     draw();
   }
   $("#undoBtn").onclick = () => { S.strokes.pop(); replayStrokes(); };
@@ -570,7 +595,12 @@
     if (S.decoTab === "doodle") {
       const isStamp = S.pen.brush !== "pen" && S.pen.brush !== "eraser";
       const st = { kind: isStamp ? "stamp" : S.pen.brush, colour: S.pen.colour, size: S.pen.size * unit(), pts: [p] };
-      if (isStamp) { st.src = S.pen.brush; st.spacing = C.pens.brushes.find((b) => b.src === st.src)?.spacing; st.stampImg = await tinted(st.src, st.colour); }
+      if (isStamp) {
+        const b = C.pens.brushes.find((x) => x.src === S.pen.brush) || {};
+        Object.assign(st, { src: b.src, spacing: b.spacing ?? 1.4, scale: b.scale ?? 1, jitter: b.jitter || 0 });
+        try { st.stampImg = b.tint === false ? await loadImg(b.src) : await tinted(b.src, st.colour); }
+        catch (err) { toast("Couldn't load brush " + b.src); S.strokes.pop(); return; }
+      }
       S.strokes.push(st); strokeSegment(st, p, p); draw();
       drag = { type: "draw", st };
       return;
