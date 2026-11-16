@@ -139,17 +139,28 @@
             <label class="check"><input type="checkbox" id="dateToggle"> Show date + time stamp</label>
           </div>
 
-          <!-- finish step -->
-          <div class="panel" data-step="finish" hidden>
-            <h3>All done!</h3>
-            <button class="btn btn-solid wide" id="downloadBtn">Download image</button>
-            <button class="btn wide" id="shareBtn" hidden>Save to Photos / Share</button>
-            <button class="btn wide" id="saveRollBtn">Save to my roll</button>
-            <p class="muted small">Your roll is stored in this browser only. Clearing your browser data will remove it.</p>
-            <button class="btn wide" id="againBtn">Take new photos</button>
-          </div>
-
           <div class="actions"><button class="btn" id="studioNext">Continue</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRINT -->
+    <div class="screen" id="s-print" hidden>
+      <h2 id="printTitle">Ready to print</h2>
+      <div class="print-stage">
+        <div class="machine">
+          <div class="slot" id="slot"><i></i></div>
+          <div class="paper-out" id="paperOut">
+            <img id="printImg" alt="Your printed photo strip">
+            <button class="print-btn" id="printBtn">Print</button>
+          </div>
+        </div>
+        <div class="print-actions" id="printActions" hidden>
+          <button class="btn btn-solid wide" id="downloadBtn">Download image</button>
+          <button class="btn wide" id="shareBtn" hidden>Save to Photos / Share</button>
+          <button class="btn wide" id="saveRollBtn">Save to my roll</button>
+          <p class="muted small">Your roll is stored in this browser only. Clearing your browser data will remove it.</p>
+          <button class="btn wide" id="againBtn">Take new photos</button>
         </div>
       </div>
     </div>

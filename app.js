@@ -204,10 +204,11 @@
     capture: () => go("filter"),
     favs: () => go(S.camera === "ok" ? "capture" : "filter"),
     studio: () => {
-      const order = ["frame", "decorate", "message", "finish"];
+      const order = ["frame", "decorate", "message"];
       const i = order.indexOf(S.step);
       if (i > 0) setStep(order[i - 1]); else go("favs");
     },
+    print: () => { S.step = "message"; go("studio"); },
     roll: () => go(S.lastBooth),
   };
   function go(name) {
@@ -219,7 +220,7 @@
     if (["intro", "studio", "roll"].includes(name)) stopCamera();
     ({
       format: buildFormats, filter: enterFilter, capture: enterCapture,
-      favs: enterFavs, studio: enterStudio, roll: renderRoll,
+      favs: enterFavs, studio: enterStudio, roll: renderRoll, print: enterPrint,
     }[name] || (() => {}))();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -445,17 +446,52 @@
   }
 
   /* steps */
-  const STEP_ORDER = ["frame", "decorate", "message", "finish"];
+  const STEP_ORDER = ["frame", "decorate", "message"];
   function setStep(step) {
     S.step = step;
     $$(".panel").forEach((p) => (p.hidden = p.dataset.step !== step));
-    $("#studioNext").parentElement.hidden = step === "finish";
     studio.style.cursor = step === "decorate" ? (S.decoTab === "doodle" ? "crosshair" : "grab") : "default";
     if (step !== "decorate") S.selected = null;
-    if (step === "finish") prepareShare();
     draw();
   }
-  $("#studioNext").onclick = () => setStep(STEP_ORDER[STEP_ORDER.indexOf(S.step) + 1]);
+  $("#studioNext").onclick = () => {
+    const i = STEP_ORDER.indexOf(S.step);
+    if (i === STEP_ORDER.length - 1) { S.selected = null; draw(); go("print"); }
+    else setStep(STEP_ORDER[i + 1]);
+  };
+
+  /* ---------------- print ---------------- */
+  let printUrl = null;
+  async function enterPrint() {
+    const out = $("#paperOut"), img = $("#printImg");
+    out.classList.remove("printing", "printed"); $("#slot").classList.remove("busy");
+    $("#printBtn").hidden = false; $("#printActions").hidden = true;
+    $("#printTitle").textContent = "Ready to print";
+    sizePrint();
+    const blob = await exportBlob("image/png");
+    if (printUrl) URL.revokeObjectURL(printUrl);
+    printUrl = URL.createObjectURL(blob); img.src = printUrl;
+    prepareShare();
+  }
+  // size the paper to the exact shape of the photo so it feeds out cleanly
+  function sizePrint() {
+    const f = fmt(), out = $("#paperOut"), img = $("#printImg");
+    const cs = getComputedStyle(out);
+    const w = out.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const h = out.clientHeight - parseFloat(cs.paddingBottom) - 2;
+    const k = Math.min(w / f.width, h / f.height);
+    img.style.width = Math.floor(f.width * k) + "px"; img.style.height = Math.floor(f.height * k) + "px";
+  }
+  window.addEventListener("resize", () => S.screen === "print" && sizePrint());
+  $("#printBtn").onclick = () => {
+    const out = $("#paperOut");
+    $("#printBtn").hidden = true; $("#printTitle").textContent = "Printing…";
+    $("#slot").classList.add("busy"); out.classList.add("printing");
+  };
+  $("#printImg").addEventListener("animationend", () => {
+    $("#slot").classList.remove("busy"); $("#paperOut").classList.add("printed");
+    $("#printTitle").textContent = "Here are your photos!"; $("#printActions").hidden = false;
+  });
 
   /* frame panel */
   function buildFramePanel() {
