@@ -71,7 +71,8 @@ window.OWON_CONFIG = {
         "sticker-sparkle.png",
         "sticker-flower.png",
         "sticker-hi.png",
-        "sticker-smiley.png"
+        "sticker-smiley.png",
+         "sticker-apple.png"
       ]
     }
   ],
